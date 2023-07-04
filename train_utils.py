@@ -172,55 +172,51 @@ def letter_to_emg_sim(key, char_tuple, noise_dist= 1, typing_style='skilled'):
     int2char = dict(enumerate(char_tuple))
     char2int = {ch: ii for ii, ch in int2char.items()}
 
-
     # find the location of key on physical keyboard
     for row in range(4):
-    argmax_key_column = keyboard[row].rfind(key)
-    if argmax_key_column != -1:
-        argmax_key_row = row
-        break
+        argmax_key_column = keyboard[row].rfind(key)
+        if argmax_key_column != -1:
+            argmax_key_row = row
+            break
     # create some parameters for archetypal typists
     if typing_style == 'skilled':
-    accuracy = .5
-    softmax_range = 1 # keys
+        accuracy = .5
+        softmax_range = 1 # keys
     if typing_style == 'unskilled':
-    accuracy = .25
-    softmax_range = 2 # keys
+        accuracy = .25
+        softmax_range = 2 # keys
 
     # set the peak probability at the true key "accuracy"% of the time,
     # otherwise it is uniformly randomly assigned to a key less than "softmax_range" keys away
     if np.random.rand() > accuracy:
-    r_shift = np.random.choice([ i  for i in range(-softmax_range,softmax_range+1) if i != 0])
-    c_shift = np.random.choice([ i  for i in range(-softmax_range,softmax_range+1) if i != 0])
-    while keyboard_index_is_lowercaseletter(argmax_key_row+r_shift,argmax_key_column+c_shift) is False:
         r_shift = np.random.choice([ i  for i in range(-softmax_range,softmax_range+1) if i != 0])
         c_shift = np.random.choice([ i  for i in range(-softmax_range,softmax_range+1) if i != 0])
-    argmax_key_row = argmax_key_row + r_shift
-    argmax_key_column = argmax_key_column + c_shift
+        while keyboard_index_is_lowercaseletter(argmax_key_row+r_shift,argmax_key_column+c_shift) is False:
+            r_shift = np.random.choice([ i  for i in range(-softmax_range,softmax_range+1) if i != 0])
+            c_shift = np.random.choice([ i  for i in range(-softmax_range,softmax_range+1) if i != 0])
+        argmax_key_row = argmax_key_row + r_shift
+        argmax_key_column = argmax_key_column + c_shift
     max_key = keyboard[argmax_key_row][argmax_key_column]
 
     p = np.zeros((len(char_tuple)))
     # space key has no errors
     if key == ' ':
     # make the space key correct 80% of the time.
-
-    for char in ['c','v','b','n','m']:
-        p[char2int[char]] = np.random.random()
-
-    p[char2int[key]] = np.random.random()+.65 # 80% correct space bar
-
-    return p/np.sum(p)
+        for char in ['c','v','b','n','m']:
+            p[char2int[char]] = np.random.random()
+        p[char2int[key]] = np.random.random()+.65 # 80% correct space bar
+        return p/np.sum(p)
 
     # add noise to softmax for keys within "softmax_range" of the peak prob key
     for i in range(-softmax_range, softmax_range+1):
-    for j in range(-softmax_range, softmax_range+1):
-        if not keyboard_index_is_lowercaseletter(argmax_key_row+i, argmax_key_column+j):
-            continue
-        # add the noise to the element in p corresponding to the key
-        noise_key = keyboard[argmax_key_row+i][argmax_key_column+j]
-        distance = np.max([abs(i),abs(j)])
-        noise = 2*np.random.random()-1
-        p[char2int[noise_key]] = ((softmax_range-distance+1) + noise) /(softmax_range+1)
+        for j in range(-softmax_range, softmax_range+1):
+            if not keyboard_index_is_lowercaseletter(argmax_key_row+i, argmax_key_column+j):
+                continue
+            # add the noise to the element in p corresponding to the key
+            noise_key = keyboard[argmax_key_row+i][argmax_key_column+j]
+            distance = np.max([abs(i),abs(j)])
+            noise = 2*np.random.random()-1
+            p[char2int[noise_key]] = ((softmax_range-distance+1) + noise) /(softmax_range+1)
 
     p[char2int[max_key]] = 1
     return p/np.sum(p)

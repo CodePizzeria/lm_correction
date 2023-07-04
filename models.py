@@ -1,5 +1,10 @@
 import torch 
 from torch import nn 
+import numpy as np 
+import train_utils 
+import torch.nn.functional as F
+
+
 class CharRNN(nn.Module):
 
     def __init__(self, tokens, n_steps=100, n_hidden=256, n_layers=2,
@@ -63,7 +68,7 @@ class CharRNN(nn.Module):
             h = self.init_hidden(1)
 
         x = np.array([[self.char2int[char]]])
-        x = one_hot_encode(x, len(self.chars))
+        x = train_utils.one_hot_encode(x, len(self.chars))
 
         inputs = torch.from_numpy(x)
 
@@ -74,6 +79,7 @@ class CharRNN(nn.Module):
         out, h = self.forward(inputs, h)
 
         p = F.softmax(out, dim=1).data
+        p_out = np.copy(p.numpy())
 
         if cuda:
             p = p.cpu()
@@ -88,7 +94,7 @@ class CharRNN(nn.Module):
 
         char = np.random.choice(top_ch, p=p/p.sum())
 
-        return self.int2char[char], h
+        return self.int2char[char], h, p_out
 
     def init_weights(self):
         ''' Initialize weights for fully connected layer '''
